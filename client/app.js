@@ -15,6 +15,16 @@ const els = {
   drawerContent: document.getElementById("drawerContent"),
   drawerClose: document.getElementById("drawerClose"),
   connectStravaBtn: document.getElementById("connectStravaBtn"),
+  importStravaBtn: document.getElementById("importStravaBtn"),
+  stravaDialog: document.getElementById("stravaDialog"),
+  stravaYear: document.getElementById("stravaYear"),
+  stravaPerPage: document.getElementById("stravaPerPage"),
+  stravaList: document.getElementById("stravaList"),
+  stravaLoad: document.getElementById("stravaLoad"),
+  stravaLoadMore: document.getElementById("stravaLoadMore"),
+  stravaCancel: document.getElementById("stravaCancel"),
+  stravaImportSelected: document.getElementById("stravaImportSelected"),
+  stravaSelectedCount: document.getElementById("stravaSelectedCount"),
   uploadGpxBtn: document.getElementById("uploadGpxBtn"),
   gpxDialog: document.getElementById("gpxDialog"),
   gpxForm: document.getElementById("gpxForm"),
@@ -323,6 +333,133 @@ function debounce(fn, ms) {
 
 els.connectStravaBtn.addEventListener("click", () => {
   window.location.href = `${API}/api/auth/strava/connect`;
+});
+
+// ---------- Browse & selectively import from Strava ----------
+
+let stravaAthleteId = localStorage.getItem("emc_athlete_id") || null;
+let stravaPage = 1;
+const stravaSelected = new Set();
+
+// Pick up ?connected=Name&athleteId=123 after the OAuth redirect back from the server.
+(function captureConnectRedirect() {
+  const params = new URLSearchParams(window.location.search);
+  const athleteId = params.get("athleteId");
+  const connectedName = params.get("connected");
+  if (athleteId) {
+    stravaAthleteId = athleteId;
+    localStorage.setItem("emc_athlete_id", athleteId);
+    window.history.replaceState({}, "", window.location.pathname);
+    openStravaDialog();
+    if (connectedName) {
+      // Small nudge so it's clear the connection worked before they start picking.
+      setTimeout(() => alert(`Connected as ${connectedName}. Choose which activities to import below.`), 50);
+    }
+  }
+})();
+
+els.importStravaBtn.addEventListener("click", () => {
+  if (!stravaAthleteId) {
+    alert("Connect a Strava account first.");
+    return;
+  }
+  openStravaDialog();
+});
+
+els.stravaCancel.addEventListener("click", () => els.stravaDialog.close());
+
+function openStravaDialog() {
+  stravaSelected.clear();
+  updateSelectedCount();
+  els.stravaList.innerHTML = `<p class="empty-state">Choose a year and click Load.</p>`;
+  els.stravaDialog.showModal();
+}
+
+els.stravaLoad.addEventListener("click", () => {
+  stravaPage = 1;
+  els.stravaList.innerHTML = "";
+  loadStravaPage();
+});
+els.stravaLoadMore.addEventListener("click", () => {
+  stravaPage += 1;
+  loadStravaPage();
+});
+
+async function loadStravaPage() {
+  const year = els.stravaYear.value;
+  const perPage = els.stravaPerPage.value;
+  const params = new URLSearchParams({ page: stravaPage, per_page: perPage });
+  if (year) params.set("year", year);
+
+  els.stravaLoad.disabled = true;
+  els.stravaLoadMore.disabled = true;
+  try {
+    const res = await fetch(`${API}/api/auth/athletes/${stravaAthleteId}/strava-activities?${params}`);
+    if (!res.ok) throw new Error("fetch failed");
+    const items = await res.json();
+
+    if (stravaPage === 1) els.stravaList.innerHTML = "";
+    if (!items.length && stravaPage === 1) {
+      els.stravaList.innerHTML = `<p class="empty-state">No activities found for that range.</p>`;
+      return;
+    }
+
+    for (const item of items) {
+      const row = document.createElement("label");
+      row.className = "strava-row" + (item.already_imported ? " imported" : "");
+      row.innerHTML = `
+        <input type="checkbox" data-id="${item.id}" ${item.already_imported ? "disabled" : ""} />
+        <div class="strava-row-main">
+          <div class="strava-row-name">${escapeHtml(item.name)}${item.already_imported ? " (already imported)" : ""}</div>
+          <div class="strava-row-meta">${item.start_date || "no date"} · ${item.type} · ${km(item.distance || 0)} km · ${Math.round(item.elevation_gain || 0)} m ↑</div>
+        </div>`;
+      const checkbox = row.querySelector("input");
+      checkbox.addEventListener("change", () => {
+        if (checkbox.checked) stravaSelected.add(item.id);
+        else stravaSelected.delete(item.id);
+        updateSelectedCount();
+      });
+      els.stravaList.appendChild(row);
+    }
+  } catch (err) {
+    els.stravaList.innerHTML = `<p class="empty-state">Couldn't load activities from Strava.</p>`;
+  } finally {
+    els.stravaLoad.disabled = false;
+    els.stravaLoadMore.disabled = false;
+  }
+}
+
+function updateSelectedCount() {
+  els.stravaSelectedCount.textContent = stravaSelected.size ? `${stravaSelected.size} selected` : "";
+}
+
+els.stravaImportSelected.addEventListener("click", async () => {
+  if (!stravaSelected.size) {
+    alert("Select at least one activity first.");
+    return;
+  }
+  els.stravaImportSelected.disabled = true;
+  els.stravaImportSelected.textContent = "Importing…";
+  try {
+    const res = await fetch(`${API}/api/auth/athletes/${stravaAthleteId}/import`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ activityIds: Array.from(stravaSelected) }),
+    });
+    if (!res.ok) throw new Error("import failed");
+    const { imported } = await res.json();
+    els.stravaDialog.close();
+    stravaSelected.clear();
+    updateSelectedCount();
+    loadTags();
+    loadActivities();
+    alert(`Imported ${imported} activit${imported === 1 ? "y" : "ies"}.`);
+  } catch (err) {
+    alert("Import failed — check the server logs.");
+  } finally {
+    els.stravaImportSelected.disabled = false;
+    els.stravaImportSelected.textContent = "Import selected";
+  }
 });
 
 // ---------- GPX upload ----------

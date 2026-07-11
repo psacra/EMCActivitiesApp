@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>EMC Trail Log</title>
+<title>EMC Activities App</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders:wght@600;800&family=Source+Sans+3:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
@@ -14,11 +14,12 @@
 <header class="topbar">
   <div class="topbar-inner">
     <div class="brand">
-      <span class="brand-mark">△</span>
-      <span class="brand-name">EMC<span class="brand-sub">Trail&nbsp;Log</span></span>
+      <img src="emc-logo.png" alt="EMC — Esrin Mountain Club" class="brand-logo" />
+      <span class="brand-name">EMC<span class="brand-sub">Activities&nbsp;App</span></span>
     </div>
     <nav class="topnav">
       <button id="connectStravaBtn" class="btn btn-accent">Connect Strava</button>
+      <button id="importStravaBtn" class="btn btn-ghost">Import from Strava</button>
       <button id="uploadGpxBtn" class="btn btn-ghost">Add GPX</button>
     </nav>
   </div>
@@ -101,6 +102,46 @@
     <div id="drawerContent"></div>
   </div>
 </div>
+
+<!-- Strava browse & selective import dialog -->
+<dialog id="stravaDialog" class="dialog-wide">
+  <h3>Import from Strava</h3>
+  <p class="dialog-hint">Pick a year (or browse all), then check exactly the activities you want in the log.</p>
+
+  <div class="field-row">
+    <label class="field">
+      <span>Year</span>
+      <select id="stravaYear">
+        <option value="">All years</option>
+        <option value="2026">2026</option>
+        <option value="2025">2025</option>
+        <option value="2024">2024</option>
+        <option value="2023">2023</option>
+        <option value="2022">2022</option>
+      </select>
+    </label>
+    <label class="field">
+      <span>Per page</span>
+      <select id="stravaPerPage">
+        <option value="30">30</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+      </select>
+    </label>
+  </div>
+
+  <div id="stravaList" class="strava-list">
+    <p class="empty-state">Choose a year and click Load.</p>
+  </div>
+
+  <div class="dialog-actions">
+    <button type="button" id="stravaLoad" class="btn btn-ghost">Load</button>
+    <button type="button" id="stravaLoadMore" class="btn btn-ghost">Load more</button>
+    <span class="strava-selected-count" id="stravaSelectedCount"></span>
+    <button type="button" id="stravaCancel" class="btn btn-ghost">Close</button>
+    <button type="button" id="stravaImportSelected" class="btn btn-accent">Import selected</button>
+  </div>
+</dialog>
 
 <!-- GPX upload dialog -->
 <dialog id="gpxDialog">

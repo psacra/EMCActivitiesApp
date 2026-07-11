@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { pool } from "../db.js";
-import { getAuthorizeUrl, exchangeCodeForToken, syncAthleteActivities } from "../strava.js";
+import { getAuthorizeUrl, exchangeCodeForToken, browseAthleteActivities, importStravaActivity } from "../strava.js";
 
 export const authRouter = Router();
 
@@ -32,10 +32,9 @@ authRouter.get("/strava/callback", async (req, res) => {
       [athlete.id, athlete.firstname, athlete.lastname, access_token, refresh_token, expires_at]
     );
 
-    // Kick off an initial sync right away so new members see their history.
-    await syncAthleteActivities(athlete.id);
-
-    res.redirect(`${process.env.PUBLIC_CLIENT_URL}/?connected=${athlete.firstname}`);
+    // No auto-import here on purpose — the person picks which activities to
+    // bring in from the "Import from Strava" browser in the app.
+    res.redirect(`${process.env.PUBLIC_CLIENT_URL}/?connected=${athlete.firstname}&athleteId=${athlete.id}`);
   } catch (err) {
     console.error(err);
     res.status(500).send("Strava connection failed. Check server logs.");
@@ -49,10 +48,60 @@ authRouter.get("/athletes", async (req, res) => {
   res.json(rows);
 });
 
-authRouter.post("/athletes/:id/sync", async (req, res) => {
+// Browse an athlete's Strava activities without importing them.
+// ?year=2025 restricts to that calendar year; otherwise plain paging (?page=&per_page=).
+authRouter.get("/athletes/:id/strava-activities", async (req, res) => {
   try {
-    const result = await syncAthleteActivities(Number(req.params.id));
-    res.json(result);
+    const { page = 1, per_page = 30, year } = req.query;
+    let before, after;
+    if (year) {
+      after = Math.floor(new Date(`${year}-01-01T00:00:00Z`).getTime() / 1000);
+      before = Math.floor(new Date(`${Number(year) + 1}-01-01T00:00:00Z`).getTime() / 1000);
+    }
+
+    const raw = await browseAthleteActivities(Number(req.params.id), {
+      page: Number(page),
+      perPage: Number(per_page),
+      before,
+      after,
+    });
+
+    const ids = raw.map((a) => a.id);
+    const { rows: alreadyImported } = ids.length
+      ? await pool.query("SELECT strava_activity_id FROM activities WHERE strava_activity_id = ANY($1)", [ids])
+      : { rows: [] };
+    const importedSet = new Set(alreadyImported.map((r) => Number(r.strava_activity_id)));
+
+    res.json(
+      raw.map((a) => ({
+        id: a.id,
+        name: a.name,
+        type: a.type,
+        start_date: a.start_date_local?.slice(0, 10),
+        distance: a.distance,
+        elevation_gain: a.total_elevation_gain,
+        already_imported: importedSet.has(a.id),
+      }))
+    );
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Import exactly the activities the person selected.
+authRouter.post("/athletes/:id/import", async (req, res) => {
+  try {
+    const { activityIds } = req.body;
+    if (!Array.isArray(activityIds) || !activityIds.length) {
+      return res.status(400).json({ error: "activityIds (array) required" });
+    }
+    let imported = 0;
+    for (const stravaId of activityIds) {
+      await importStravaActivity(Number(req.params.id), stravaId);
+      imported++;
+    }
+    res.json({ imported });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });

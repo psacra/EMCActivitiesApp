@@ -53,57 +53,68 @@ async function refreshTokenIfNeeded(athlete) {
   return data.access_token;
 }
 
-// Pulls recent activities for one connected athlete and upserts hikes/rides.
-export async function syncAthleteActivities(athleteId, { after } = {}) {
+// Lists an athlete's Strava activities WITHOUT importing them, so the person
+// can pick which ones to bring into the log. Supports paging back through
+// any year via before/after (unix seconds).
+export async function browseAthleteActivities(athleteId, { page = 1, perPage = 30, before, after } = {}) {
   const { rows } = await pool.query("SELECT * FROM athletes WHERE id = $1", [athleteId]);
   const athlete = rows[0];
   if (!athlete) throw new Error("Athlete not found");
 
   const accessToken = await refreshTokenIfNeeded(athlete);
 
-  const params = new URLSearchParams({ per_page: "100" });
-  if (after) params.set("after", String(Math.floor(new Date(after).getTime() / 1000)));
+  const params = new URLSearchParams({ page: String(page), per_page: String(perPage) });
+  if (before) params.set("before", String(before));
+  if (after) params.set("after", String(after));
 
   const res = await fetch(`${STRAVA_BASE}/athlete/activities?${params.toString()}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   if (!res.ok) throw new Error(`Strava activities fetch failed: ${res.status}`);
-  const activities = await res.json();
+  return res.json();
+}
 
-  // Only bring in hike / MTB / ride-type activities; everything else is skipped.
-  const relevant = activities.filter((a) =>
-    ["Hike", "Walk", "MountainBikeRide", "Ride", "GravelRide", "TrailRun", "Run"].includes(a.type)
+// Imports exactly one Strava activity, chosen by the person, by id.
+export async function importStravaActivity(athleteId, stravaActivityId) {
+  const { rows } = await pool.query("SELECT * FROM athletes WHERE id = $1", [athleteId]);
+  const athlete = rows[0];
+  if (!athlete) throw new Error("Athlete not found");
+
+  const accessToken = await refreshTokenIfNeeded(athlete);
+
+  const res = await fetch(`${STRAVA_BASE}/activities/${stravaActivityId}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) throw new Error(`Strava activity fetch failed: ${res.status}`);
+  const a = await res.json();
+
+  await pool.query(
+    `INSERT INTO activities
+      (source, strava_activity_id, athlete_id, name, activity_type, start_date,
+       distance_m, elevation_gain_m, moving_time_s, summary_polyline, description)
+     VALUES ('strava', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+     ON CONFLICT (strava_activity_id) DO UPDATE SET
+       name = EXCLUDED.name,
+       distance_m = EXCLUDED.distance_m,
+       elevation_gain_m = EXCLUDED.elevation_gain_m,
+       moving_time_s = EXCLUDED.moving_time_s,
+       summary_polyline = EXCLUDED.summary_polyline,
+       description = COALESCE(activities.description, EXCLUDED.description),
+       updated_at = now()`,
+    [
+      a.id,
+      athlete.id,
+      a.name,
+      mapType(a.type),
+      a.start_date_local?.slice(0, 10),
+      a.distance,
+      a.total_elevation_gain,
+      a.moving_time,
+      a.map?.summary_polyline || a.map?.polyline || null,
+      a.description || null,
+    ]
   );
-
-  let imported = 0;
-  for (const a of relevant) {
-    await pool.query(
-      `INSERT INTO activities
-        (source, strava_activity_id, athlete_id, name, activity_type, start_date,
-         distance_m, elevation_gain_m, moving_time_s, summary_polyline)
-       VALUES ('strava', $1, $2, $3, $4, $5, $6, $7, $8, $9)
-       ON CONFLICT (strava_activity_id) DO UPDATE SET
-         name = EXCLUDED.name,
-         distance_m = EXCLUDED.distance_m,
-         elevation_gain_m = EXCLUDED.elevation_gain_m,
-         moving_time_s = EXCLUDED.moving_time_s,
-         summary_polyline = EXCLUDED.summary_polyline,
-         updated_at = now()`,
-      [
-        a.id,
-        athlete.id,
-        a.name,
-        mapType(a.type),
-        a.start_date_local?.slice(0, 10),
-        a.distance,
-        a.total_elevation_gain,
-        a.moving_time,
-        a.map?.summary_polyline || null,
-      ]
-    );
-    imported++;
-  }
-  return { imported, totalFetched: activities.length };
+  return a;
 }
 
 function mapType(stravaType) {
