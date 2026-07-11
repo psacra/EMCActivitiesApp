@@ -1,0 +1,410 @@
+:root {
+  --ink: #20241f;
+  --paper: #efe9da;
+  --chalk: #faf7ef;
+  --moss: #4b6043;
+  --moss-dark: #384a32;
+  --clay: #b5651d;
+  --slate: #5b6b73;
+  --line: rgba(32, 36, 31, 0.14);
+
+  --font-display: "Big Shoulders", sans-serif;
+  --font-body: "Source Sans 3", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--ink);
+  color: var(--ink);
+  font-family: var(--font-body);
+}
+
+button, input, select {
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+/* ---------- Header ---------- */
+
+.topbar {
+  background: var(--ink);
+  color: var(--chalk);
+  position: relative;
+  padding-bottom: 18px;
+}
+
+.topbar-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 24px 28px;
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 800;
+}
+
+.brand-mark {
+  color: var(--clay);
+  font-size: 1.4rem;
+  transform: translateY(-2px);
+  display: inline-block;
+}
+
+.brand-name {
+  font-size: 1.9rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.brand-sub {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  text-transform: none;
+  font-size: 0.85rem;
+  color: var(--paper);
+  margin-left: 8px;
+  letter-spacing: 0.08em;
+}
+
+.topnav { display: flex; gap: 10px; }
+
+.btn {
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 9px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+.btn:active { transform: translateY(1px); }
+
+.btn-accent {
+  background: var(--clay);
+  color: var(--chalk);
+}
+.btn-accent:hover { background: #9c5417; }
+
+.btn-ghost {
+  background: transparent;
+  border-color: rgba(250, 247, 239, 0.4);
+  color: var(--chalk);
+}
+.btn-ghost:hover { border-color: var(--chalk); }
+
+.elevation-divider {
+  display: block;
+  width: 100%;
+  height: 34px;
+  fill: var(--paper);
+}
+
+/* ---------- Layout ---------- */
+
+.layout {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 28px;
+  padding: 0 24px 60px;
+  background: var(--paper);
+}
+
+.filters {
+  background: var(--chalk);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 20px;
+  align-self: start;
+  position: sticky;
+  top: 20px;
+}
+
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--slate);
+  margin: 0 0 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.field input, .field select {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--chalk);
+  font-weight: 400;
+}
+
+.checkbox-field {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+.checkbox-field input { width: auto; }
+
+.field-row {
+  display: flex;
+  gap: 8px;
+}
+.field-row .field { flex: 1; }
+
+.stat-block {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px dashed var(--line);
+  padding-top: 14px;
+  margin-top: 6px;
+}
+.stat { text-align: center; }
+.stat-value {
+  display: block;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--moss-dark);
+}
+.stat-label {
+  font-size: 0.68rem;
+  color: var(--slate);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ---------- Log list ---------- */
+
+.mapview {
+  padding-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.main-map {
+  height: 440px;
+  width: 100%;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  background: var(--chalk);
+}
+
+/* Leaflet's own default marker uses a blue teardrop; recolor our custom
+   circle markers via inline styles instead, see app.js markerHtml(). */
+.trail-marker {
+  border-radius: 50%;
+  border: 2px solid var(--chalk);
+  box-shadow: 0 1px 4px rgba(32,36,31,0.4);
+}
+
+.map-legend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--slate);
+}
+.map-legend span { display: flex; align-items: center; gap: 6px; }
+.map-legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.log {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.empty-state {
+  color: var(--slate);
+  font-style: italic;
+}
+
+.card {
+  background: var(--chalk);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--moss);
+  border-radius: 4px;
+  padding: 16px 18px;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 16px;
+  transition: box-shadow 0.15s ease;
+}
+.card:hover { box-shadow: 0 3px 14px rgba(32,36,31,0.12); }
+.card.type-mtb { border-left-color: var(--clay); }
+.card.type-ride { border-left-color: var(--slate); }
+.card.type-run { border-left-color: #7a6a9c; }
+
+.card-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.15rem;
+  margin: 0;
+  grid-column: 1;
+}
+
+.card-badge {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--slate);
+  align-self: start;
+  grid-column: 2;
+  text-align: right;
+}
+
+.card-meta {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 18px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--moss-dark);
+}
+
+.card-tags {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tag-chip {
+  background: rgba(75, 96, 67, 0.12);
+  color: var(--moss-dark);
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.curated-flag {
+  color: var(--clay);
+  font-weight: 700;
+}
+
+/* ---------- Drawer ---------- */
+
+.drawer {
+  position: fixed;
+  inset: 0;
+  background: rgba(32, 36, 31, 0.55);
+  display: flex;
+  justify-content: flex-end;
+  z-index: 50;
+}
+.drawer[hidden] { display: none; }
+
+.drawer-inner {
+  background: var(--chalk);
+  width: min(480px, 100%);
+  height: 100%;
+  overflow-y: auto;
+  padding: 28px;
+  position: relative;
+}
+
+.drawer-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  cursor: pointer;
+  color: var(--slate);
+}
+
+.drawer-inner h3 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  margin: 0 0 4px;
+}
+
+.drawer-inner .map {
+  height: 220px;
+  border-radius: 4px;
+  margin: 14px 0;
+  border: 1px solid var(--line);
+}
+
+.drawer-inner textarea {
+  width: 100%;
+  min-height: 90px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font-family: var(--font-body);
+  resize: vertical;
+}
+
+.drawer-inner label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin: 14px 0 4px;
+}
+
+.drawer-inner input[type="text"] {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+.drawer-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* ---------- Dialog ---------- */
+
+dialog {
+  border: none;
+  border-radius: 6px;
+  padding: 24px;
+  max-width: 380px;
+  width: 90%;
+}
+dialog::backdrop { background: rgba(32, 36, 31, 0.55); }
+dialog h3 { font-family: var(--font-display); margin-top: 0; }
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+@media (max-width: 760px) {
+  .layout { grid-template-columns: 1fr; }
+  .filters { position: static; }
+}

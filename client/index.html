@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EMC Trail Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders:wght@600;800&family=Source+Sans+3:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <span class="brand-mark">△</span>
+      <span class="brand-name">EMC<span class="brand-sub">Trail&nbsp;Log</span></span>
+    </div>
+    <nav class="topnav">
+      <button id="connectStravaBtn" class="btn btn-accent">Connect Strava</button>
+      <button id="uploadGpxBtn" class="btn btn-ghost">Add GPX</button>
+    </nav>
+  </div>
+  <svg class="elevation-divider" viewBox="0 0 1200 60" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0,45 L60,40 L140,50 L220,20 L300,35 L400,10 L480,30 L560,15 L660,40 L760,25 L860,45 L960,20 L1060,38 L1200,15 L1200,60 L0,60 Z"/>
+  </svg>
+</header>
+
+<main class="layout">
+  <aside class="filters">
+    <h2 class="section-label">Filter the log</h2>
+
+    <label class="field">
+      <span>Search</span>
+      <input type="search" id="searchInput" placeholder="Ridge, trail name, notes…" />
+    </label>
+
+    <label class="field">
+      <span>Type</span>
+      <select id="typeFilter">
+        <option value="">All types</option>
+        <option value="hike">Hike</option>
+        <option value="mtb">MTB</option>
+        <option value="ride">Ride</option>
+        <option value="run">Run</option>
+        <option value="other">Other</option>
+      </select>
+    </label>
+
+    <label class="field">
+      <span>Tag</span>
+      <select id="tagFilter">
+        <option value="">All tags</option>
+      </select>
+    </label>
+
+    <label class="field checkbox-field">
+      <input type="checkbox" id="curatedOnly" />
+      <span>Curated only</span>
+    </label>
+
+    <div class="field-row">
+      <label class="field">
+        <span>From</span>
+        <input type="date" id="fromDate" />
+      </label>
+      <label class="field">
+        <span>To</span>
+        <input type="date" id="toDate" />
+      </label>
+    </div>
+
+    <div class="stat-block" id="statBlock">
+      <div class="stat"><span class="stat-value" id="statCount">0</span><span class="stat-label">activities</span></div>
+      <div class="stat"><span class="stat-value" id="statDistance">0</span><span class="stat-label">km logged</span></div>
+      <div class="stat"><span class="stat-value" id="statElevation">0</span><span class="stat-label">m climbed</span></div>
+    </div>
+  </aside>
+
+  <section class="mapview">
+    <div id="mainMap" class="main-map"></div>
+    <div class="map-legend">
+      <span><i style="background:#4b6043"></i>Hike</span>
+      <span><i style="background:#b5651d"></i>MTB</span>
+      <span><i style="background:#5b6b73"></i>Ride</span>
+      <span><i style="background:#7a6a9c"></i>Run</span>
+      <span><i style="background:#8a8f85"></i>Other</span>
+    </div>
+    <h2 class="section-label">Log entries</h2>
+    <div class="log" id="log">
+      <p class="empty-state">Loading the log…</p>
+    </div>
+  </section>
+</main>
+
+<!-- Detail / curation drawer -->
+<div class="drawer" id="drawer" hidden>
+  <div class="drawer-inner">
+    <button class="drawer-close" id="drawerClose" aria-label="Close">×</button>
+    <div id="drawerContent"></div>
+  </div>
+</div>
+
+<!-- GPX upload dialog -->
+<dialog id="gpxDialog">
+  <form id="gpxForm" method="dialog">
+    <h3>Add a GPX activity</h3>
+    <label class="field">
+      <span>GPX file</span>
+      <input type="file" name="gpx" accept=".gpx" required />
+    </label>
+    <label class="field">
+      <span>Name</span>
+      <input type="text" name="name" placeholder="Optional — falls back to track name" />
+    </label>
+    <label class="field">
+      <span>Type</span>
+      <select name="activity_type">
+        <option value="hike">Hike</option>
+        <option value="mtb">MTB</option>
+        <option value="ride">Ride</option>
+        <option value="run">Run</option>
+        <option value="other">Other</option>
+      </select>
+    </label>
+    <div class="dialog-actions">
+      <button type="button" id="gpxCancel" class="btn btn-ghost">Cancel</button>
+      <button type="submit" class="btn btn-accent">Upload</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
