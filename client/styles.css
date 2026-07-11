@@ -395,9 +395,23 @@ dialog {
   padding: 24px;
   max-width: 380px;
   width: 90%;
+  background: var(--chalk);
+  color: var(--ink);
 }
 dialog::backdrop { background: rgba(32, 36, 31, 0.55); }
 dialog h3 { font-family: var(--font-display); margin-top: 0; }
+
+/* .btn-ghost defaults to near-white text/border for the dark header;
+   inside dialogs the background is light, so it needs dark-on-light instead. */
+dialog .btn-ghost {
+  color: var(--ink);
+  border-color: var(--line);
+}
+dialog .btn-ghost:hover {
+  border-color: var(--moss-dark);
+  background: rgba(75, 96, 67, 0.08);
+}
+
 .dialog-actions {
   display: flex;
   justify-content: flex-end;
